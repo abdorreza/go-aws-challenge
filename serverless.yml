@@ -23,10 +23,11 @@ frameworkVersion: '3'
 provider:
   name: aws
   runtime: go1.x
+  region: eu-north-1 
 
 # you can overwrite defaults here
 #  stage: dev
-#  region: us-east-1
+
 
 # you can add statements to the Lambda function's IAM Role here
 #  iam:
@@ -56,18 +57,44 @@ package:
     - ./bin/**
 
 functions:
-  hello:
-    handler: bin/hello
+  createDevice:
+    handler: device/api.Handler
     events:
       - httpApi:
-          path: /hello
-          method: get
-  world:
-    handler: bin/world
+          path: /api/devices
+          method: post
+  getDevice:
+    handler: device/api.Handler
     events:
       - httpApi:
-          path: /world
+          path: /api/devices/{id}
           method: get
+
+
+resources:
+  Resources:
+    DeviceTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Device
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: deviceModel
+            AttributeType: S
+          - AttributeName: name
+            AttributeType: S
+          - AttributeName: note
+            AttributeType: S
+          - AttributeName: serial
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
@@ -110,12 +137,6 @@ functions:
 #      variable2: value2
 
 # you can add CloudFormation resource templates here
-#resources:
-#  Resources:
-#    NewResource:
-#      Type: AWS::S3::Bucket
-#      Properties:
-#        BucketName: my-new-bucket
 #  Outputs:
 #     NewOutput:
 #       Description: "Description for the output"
