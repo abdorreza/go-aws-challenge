@@ -1,7 +1,9 @@
 package main
 
 import (
-	"github.com/abdorreza/go-aws-challenge/device"
+	"context"
+	"fmt"
+
 	"github.com/aws/aws-lambda-go/lambda"
 )
 
@@ -66,6 +68,18 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	return events.APIGatewayProxyResponse{Body: string(marshalledItem), StatusCode: 200}, nil
 }*/
 
-func main() {
-	lambda.Start(device.Handler)
+type MyEvent struct {
+	Name string `json:"name"`
 }
+
+func HandleRequest(ctx context.Context, name MyEvent) (string, error) {
+	return fmt.Sprintf("Hello %s!", name.Name), nil
+}
+
+func main() {
+	lambda.Start(HandleRequest)
+}
+
+/*func main() {
+	lambda.Start(device.Handler)
+}*/
