@@ -58,13 +58,13 @@ package:
 
 functions:
   createDevice:
-    handler: device/api.Handler
+    handler: device/api.Add
     events:
       - httpApi:
           path: /api/devices
           method: post
   getDevice:
-    handler: device/api.Handler
+    handler: device/api.Get
     events:
       - httpApi:
           path: /api/devices/{id}
