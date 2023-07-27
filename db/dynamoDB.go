@@ -5,13 +5,27 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-type Database struct {
-	client    *dynamodb.DynamoDB
-	tablename string
-}
+const (
+	// PkName - SkName - GsiName - LsiName - TableName should edit these field as you use
+	PkName       = "PK"
+	SkName       = "SK"
+	GsiName      = "GSI"
+	LsiName      = "LSI"
+	GsiIndexName = "GlobalSecondaryIndex"
+	LsiIndexName = "LocalSecondaryIndex"
+	TableName    = "MyTable"
+
+	// GlobalWriteReadCap should be equal or higher than PartitionWriteReadCap
+	GlobalWriteReadCap    = 10
+	PartitionWriteReadCap = 10
+
+	Location = "eu-west-2" // your location!!
+)
 
 type Movie struct {
 	Id          string `json:"id"`
@@ -25,58 +39,49 @@ type Item struct {
 	// Add other attributes as needed
 }
 
-func getFromDynamoDB(ctx context.Context, key string) (*Item, error) {
-	// Create a new AWS session
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String("YOUR_REGION"), // Replace with your desired AWS region
+func getFromDynamoDB(ctx context.Context, key string) {
+
+	cfg, err := config.LoadDefaultConfig(context.TODO(), func(opts *config.LoadOptions) error {
+		opts.Region = Location
+		return nil
 	})
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	// Create a new DynamoDB client
-	svc := dynamodb.New(sess)
-
-	// Define the input parameters for GetItem operation
-	params := &dynamodb.GetItemInput{
-		TableName: aws.String("YOUR_TABLE_NAME"), // Replace with your DynamoDB table name
-		Key: map[string]*dynamodb.AttributeValue{
-			"id": {
-				S: aws.String(key),
+	svc := dynamodb.NewFromConfig(cfg)
+	out, err := svc.CreateTable(context.TODO(), &dynamodb.CreateTableInput{
+		TableName: aws.String(TableName),
+		AttributeDefinitions: []types.AttributeDefinition{
+			{
+				AttributeName: aws.String(PkName),
+				AttributeType: types.ScalarAttributeTypeS,
+			},
+			{
+				AttributeName: aws.String(SkName),
+				AttributeType: types.ScalarAttributeTypeS,
 			},
 		},
-	}
-
-	// Execute the GetItem operation
-	result, err := svc.GetItem(params)
+		KeySchema: []types.KeySchemaElement{
+			{
+				AttributeName: aws.String(PkName),
+				KeyType:       types.KeyTypeHash,
+			},
+			{
+				AttributeName: aws.String(SkName),
+				KeyType:       types.KeyTypeRange,
+			},
+		},
+		ProvisionedThroughput: &types.ProvisionedThroughput{
+			ReadCapacityUnits:  aws.Int64(PartitionWriteReadCap),
+			WriteCapacityUnits: aws.Int64(PartitionWriteReadCap),
+		},
+	})
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	// Unmarshal the DynamoDB attribute values into the Item struct
-	item := Item{}
-	err = dynamodbattribute.UnmarshalMap(result.Item, &item)
-	if err != nil {
-		return nil, err
-	}
-
-	return &item, nil
-}
-
-func LambdaHandler(ctx context.Context, request interface{}) (*Item, error) {
-	// Type assertion to extract the key from the request
-	key, ok := request.(string)
-	if !ok {
-		return nil, fmt.Errorf("invalid request format")
-	}
-
-	// Call the function to get the item from DynamoDB
-	item, err := getFromDynamoDB(ctx, key)
-	if err != nil {
-		return nil, err
-	}
-
-	return item, nil
+	fmt.Println(out)
 }
 
 /*func main() {
