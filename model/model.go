@@ -1,6 +1,6 @@
 package model
 
-type Devices struct {
+type Device struct {
 	Id          string `json:"Id"`
 	DeviceModel string `json:"DeviceModel"`
 	Name        string `json:"Name"`

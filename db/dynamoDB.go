@@ -2,93 +2,76 @@ package db
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"sync"
 
+	"github.com/abdorreza/go-aws-challenge/config"
 	"github.com/abdorreza/go-aws-challenge/model"
-	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
+	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-// Get All Rows
-func GetAllData() (events.APIGatewayProxyResponse, error) {
-	products := []model.Devices{}
-	cfg, err := config.LoadDefaultConfig(context.TODO(), func(o *config.LoadOptions) error {
-		o.Region = "eu-north-1"
+var once sync.Once
+var dynamodbClient *dynamodb.Client
+
+func init() {
+	err := loadClient(context.Background())
+	if err != nil {
+		panic(err)
+	}
+}
+
+// Return in Sigleton Manner, Return Dynaodb Client
+func loadClient(ctx context.Context) error {
+	if dynamodbClient != nil {
 		return nil
+	}
+	var err error
+	once.Do(func() {
+		var cfg aws.Config
+		cfg, err = awsConfig.LoadDefaultConfig(ctx, func(o *awsConfig.LoadOptions) error {
+			o.Region = config.AWSRegion
+			return nil
+		})
+		if err != nil {
+			return
+		}
+
+		dynamodbClient = dynamodb.NewFromConfig(cfg)
+
 	})
-
 	if err != nil {
-		panic(err)
+		return err
 	}
-	svc := dynamodb.NewFromConfig(cfg)
-
-	out, err := svc.Scan(context.TODO(), &dynamodb.ScanInput{
-		TableName: aws.String("devices"),
-	})
-
-	if err != nil {
-		panic(err)
-	}
-
-	err = attributevalue.UnmarshalListOfMaps(out.Items, &products)
-	if err != nil {
-		panic(fmt.Sprintf("failed to unmarshal Dynamodb Scan Items, %v", err))
-	}
-
-	productsJson, err := json.Marshal(products)
-	if err != nil {
-		panic(err)
-	}
-
-	resp := events.APIGatewayProxyResponse{
-		StatusCode:      200,
-		IsBase64Encoded: false,
-		Body:            string(productsJson),
-		Headers: map[string]string{
-			"Content-Type": "application/json",
-		},
-	}
-
-	fmt.Println(resp)
-
-	return resp, nil
+	return nil
 }
 
 // Get One Row
-func ReadData() {
-	cfg, err := config.LoadDefaultConfig(context.TODO(), func(o *config.LoadOptions) error {
-		o.Region = "eu-north-1"
-		return nil
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	svc := dynamodb.NewFromConfig(cfg)
-	out, err := svc.GetItem(context.TODO(), &dynamodb.GetItemInput{
-		TableName: aws.String("devices"),
+func GetDevice(ctx context.Context, deviceID string) (model.Device, error) {
+	out, err := dynamodbClient.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String(config.DynamodbDeviceDB),
 		Key: map[string]types.AttributeValue{
-			"id": &types.AttributeValueMemberS{Value: "/devices/id2"},
+			"id": &types.AttributeValueMemberS{Value: deviceID},
 		},
 	})
-
 	if err != nil {
-		panic(err)
+		return model.Device{}, err
 	}
 
-	a, _ := json.Marshal(out.Item)
-	s := string(a)
+	var device model.Device
+	err = attributevalue.UnmarshalMap(out.Item, &device)
+	if err != nil {
+		return model.Device{}, err
+	}
 
-	fmt.Println(s)
+	return device, nil
 }
 
-func WriteData() {
-	cfg, err := config.LoadDefaultConfig(context.TODO(), func(o *config.LoadOptions) error {
+func InsertDevice(ctx context.Context) {
+	cfg, err := awsConfig.LoadDefaultConfig(ctx, func(o *awsConfig.LoadOptions) error {
 		o.Region = "eu-north-1"
 		return nil
 	})
@@ -97,7 +80,7 @@ func WriteData() {
 	}
 
 	svc := dynamodb.NewFromConfig(cfg)
-	out, err := svc.PutItem(context.TODO(), &dynamodb.PutItemInput{
+	out, err := svc.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String("devices"),
 		Item: map[string]types.AttributeValue{
 			"id":          &types.AttributeValueMemberS{Value: "/devices/id10"},
