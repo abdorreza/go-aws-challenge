@@ -60,7 +60,7 @@ func GetAllData() (events.APIGatewayProxyResponse, error) {
 }
 
 // Get One Row
-func GetOneData() {
+func ReadData() {
 	cfg, err := config.LoadDefaultConfig(context.TODO(), func(o *config.LoadOptions) error {
 		o.Region = "eu-north-1"
 		return nil
@@ -85,4 +85,32 @@ func GetOneData() {
 	s := string(a)
 
 	fmt.Println(s)
+}
+
+func WriteData() {
+	cfg, err := config.LoadDefaultConfig(context.TODO(), func(o *config.LoadOptions) error {
+		o.Region = "eu-north-1"
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	svc := dynamodb.NewFromConfig(cfg)
+	out, err := svc.PutItem(context.TODO(), &dynamodb.PutItemInput{
+		TableName: aws.String("devices"),
+		Item: map[string]types.AttributeValue{
+			"id":          &types.AttributeValueMemberS{Value: "/devices/id10"},
+			"deviceModel": &types.AttributeValueMemberS{Value: "/devicemodels/id10"},
+			"name":        &types.AttributeValueMemberS{Value: "Sensor10"},
+			"note":        &types.AttributeValueMemberS{Value: "Testing a sensor10."},
+			"serial":      &types.AttributeValueMemberS{Value: "A020000110"},
+		},
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(out.Attributes)
 }

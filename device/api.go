@@ -58,6 +58,7 @@ func Get(ctx context.Context, request events.APIGatewayProxyRequest) (events.API
 
 func Add(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	// Retrieve the "deviceId" path parameter from the request
+	fmt.Println("*******************************************************")
 	deviceId := request.PathParameters["id"]
 
 	// Your logic to fetch device data based on "deviceId"
