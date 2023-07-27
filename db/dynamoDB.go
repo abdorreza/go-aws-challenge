@@ -2,47 +2,67 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
+	"github.com/abdorreza/go-aws-challenge/model"
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-const (
-	// PkName - SkName - GsiName - LsiName - TableName should edit these field as you use
-	PkName       = "PK"
-	SkName       = "SK"
-	GsiName      = "GSI"
-	LsiName      = "LSI"
-	GsiIndexName = "GlobalSecondaryIndex"
-	LsiIndexName = "LocalSecondaryIndex"
-	TableName    = "MyTable"
+// Get All Rows
+func GetAllData() (events.APIGatewayProxyResponse, error) {
+	products := []model.Devices{}
+	cfg, err := config.LoadDefaultConfig(context.TODO(), func(o *config.LoadOptions) error {
+		o.Region = "eu-north-1"
+		return nil
+	})
 
-	// GlobalWriteReadCap should be equal or higher than PartitionWriteReadCap
-	GlobalWriteReadCap    = 10
-	PartitionWriteReadCap = 10
+	if err != nil {
+		panic(err)
+	}
+	svc := dynamodb.NewFromConfig(cfg)
 
-	Location = "eu-west-2" // your location!!
-)
+	out, err := svc.Scan(context.TODO(), &dynamodb.ScanInput{
+		TableName: aws.String("devices"),
+	})
 
-type Movie struct {
-	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	if err != nil {
+		panic(err)
+	}
+
+	err = attributevalue.UnmarshalListOfMaps(out.Items, &products)
+	if err != nil {
+		panic(fmt.Sprintf("failed to unmarshal Dynamodb Scan Items, %v", err))
+	}
+
+	productsJson, err := json.Marshal(products)
+	if err != nil {
+		panic(err)
+	}
+
+	resp := events.APIGatewayProxyResponse{
+		StatusCode:      200,
+		IsBase64Encoded: false,
+		Body:            string(productsJson),
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+
+	fmt.Println(resp)
+
+	return resp, nil
 }
 
-type Item struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	// Add other attributes as needed
-}
-
-func getFromDynamoDB(ctx context.Context, key string) {
-
-	cfg, err := config.LoadDefaultConfig(context.TODO(), func(opts *config.LoadOptions) error {
-		opts.Region = Location
+// Get One Row
+func GetOneData() {
+	cfg, err := config.LoadDefaultConfig(context.TODO(), func(o *config.LoadOptions) error {
+		o.Region = "eu-north-1"
 		return nil
 	})
 	if err != nil {
@@ -50,40 +70,19 @@ func getFromDynamoDB(ctx context.Context, key string) {
 	}
 
 	svc := dynamodb.NewFromConfig(cfg)
-	out, err := svc.CreateTable(context.TODO(), &dynamodb.CreateTableInput{
-		TableName: aws.String(TableName),
-		AttributeDefinitions: []types.AttributeDefinition{
-			{
-				AttributeName: aws.String(PkName),
-				AttributeType: types.ScalarAttributeTypeS,
-			},
-			{
-				AttributeName: aws.String(SkName),
-				AttributeType: types.ScalarAttributeTypeS,
-			},
-		},
-		KeySchema: []types.KeySchemaElement{
-			{
-				AttributeName: aws.String(PkName),
-				KeyType:       types.KeyTypeHash,
-			},
-			{
-				AttributeName: aws.String(SkName),
-				KeyType:       types.KeyTypeRange,
-			},
-		},
-		ProvisionedThroughput: &types.ProvisionedThroughput{
-			ReadCapacityUnits:  aws.Int64(PartitionWriteReadCap),
-			WriteCapacityUnits: aws.Int64(PartitionWriteReadCap),
+	out, err := svc.GetItem(context.TODO(), &dynamodb.GetItemInput{
+		TableName: aws.String("devices"),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: "/devices/id2"},
 		},
 	})
+
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(out)
-}
+	a, _ := json.Marshal(out.Item)
+	s := string(a)
 
-/*func main() {
-	lambda.Start(LambdaHandler)
-}*/
+	fmt.Println(s)
+}
