@@ -71,17 +71,8 @@ func GetDevice(ctx context.Context, deviceID string) (model.Device, error) {
 }
 
 func InsertDevice(ctx context.Context) {
-	cfg, err := awsConfig.LoadDefaultConfig(ctx, func(o *awsConfig.LoadOptions) error {
-		o.Region = "eu-north-1"
-		return nil
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	svc := dynamodb.NewFromConfig(cfg)
-	out, err := svc.PutItem(ctx, &dynamodb.PutItemInput{
-		TableName: aws.String("devices"),
+	out, err := dynamodbClient.PutItem(ctx, &dynamodb.PutItemInput{
+		TableName: aws.String(config.DynamodbDeviceDB),
 		Item: map[string]types.AttributeValue{
 			"id":          &types.AttributeValueMemberS{Value: "/devices/id10"},
 			"deviceModel": &types.AttributeValueMemberS{Value: "/devicemodels/id10"},
@@ -90,7 +81,6 @@ func InsertDevice(ctx context.Context) {
 			"serial":      &types.AttributeValueMemberS{Value: "A020000110"},
 		},
 	})
-
 	if err != nil {
 		panic(err)
 	}
