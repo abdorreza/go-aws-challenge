@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/abdorreza/go-aws-challenge/config"
@@ -15,14 +14,7 @@ import (
 )
 
 var once sync.Once
-var dynamodbClient *dynamodb.Client
-
-func init() {
-	err := loadClient(context.Background())
-	if err != nil {
-		panic(err)
-	}
-}
+var dynamodbClient dynamodbHandler
 
 // Return in Sigleton Manner, Return Dynaodb Client
 func loadClient(ctx context.Context) error {
@@ -49,6 +41,35 @@ func loadClient(ctx context.Context) error {
 	return nil
 }
 
+// TODO
+// 1) define struct
+
+type myStruct struct {
+}
+
+func NewMyStruct() (myStruct, error) {
+	err := loadClient(context.Background())
+	if err != nil {
+		return myStruct{}, err
+	}
+
+	return myStruct{}, nil
+}
+
+type DBHandler interface {
+	GetDevice(ctx context.Context, deviceID string) (model.Device, error)
+	InsertDevice(ctx context.Context, device model.Device) error
+}
+
+func (m myStruct) GetDevice(ctx context.Context, deviceID string) (model.Device, error) {
+	/* hamin implementation*/
+	return model.Device{}, nil
+}
+func (m myStruct) InsertDevice(ctx context.Context, device model.Device) error {
+	/* hamin implementation*/
+	return nil
+}
+
 // Get One Row
 func GetDevice(ctx context.Context, deviceID string) (model.Device, error) {
 	out, err := dynamodbClient.GetItem(ctx, &dynamodb.GetItemInput{
@@ -70,20 +91,19 @@ func GetDevice(ctx context.Context, deviceID string) (model.Device, error) {
 	return device, nil
 }
 
-func InsertDevice(ctx context.Context) {
-	out, err := dynamodbClient.PutItem(ctx, &dynamodb.PutItemInput{
-		TableName: aws.String(config.DynamodbDeviceDB),
-		Item: map[string]types.AttributeValue{
-			"id":          &types.AttributeValueMemberS{Value: "/devices/id10"},
-			"deviceModel": &types.AttributeValueMemberS{Value: "/devicemodels/id10"},
-			"name":        &types.AttributeValueMemberS{Value: "Sensor10"},
-			"note":        &types.AttributeValueMemberS{Value: "Testing a sensor10."},
-			"serial":      &types.AttributeValueMemberS{Value: "A020000110"},
-		},
-	})
+func InsertDevice(ctx context.Context, device model.Device) error {
+	deviceMap, err := attributevalue.MarshalMap(device)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	fmt.Println(out.Attributes)
+	_, err = dynamodbClient.PutItem(ctx, &dynamodb.PutItemInput{
+		TableName: aws.String(config.DynamodbDeviceDB),
+		Item:      deviceMap,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

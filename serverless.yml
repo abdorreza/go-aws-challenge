@@ -53,23 +53,28 @@ provider:
 
 package:
   patterns:
-    - '!./**'
     - ./bin/**
 
 functions:
-  createDevice:
-    handler: device/api.Add
+  handleRequest:
+    handler: main.HandleRequest
     events:
       - httpApi:
           path: /api/devices
           method: post
-  getDevice:
-    handler: device/api.Get
-    events:
-      - httpApi:
-          path: /api/devices/{id}
-          method: get
 
+#   createDevice:
+#     handler: device/api.Add
+#     events:
+#       - httpApi:
+#           path: /api/devices
+#           method: post
+#   getDevice:
+#     handler: device/api.Get
+#     events:
+#       - httpApi:
+#           path: /api/devices/{id}
+#           method: get
 
 resources:
   Resources:
@@ -79,14 +84,6 @@ resources:
         TableName: Device
         AttributeDefinitions:
           - AttributeName: id
-            AttributeType: S
-          - AttributeName: deviceModel
-            AttributeType: S
-          - AttributeName: name
-            AttributeType: S
-          - AttributeName: note
-            AttributeType: S
-          - AttributeName: serial
             AttributeType: S
         KeySchema:
           - AttributeName: id
