@@ -3,7 +3,7 @@ Welcome to the API documentation. This API allows you to manage devices and thei
 
 ## Examples
 
-Create a Device
+#### Create a Device
 
 Request:
 
@@ -29,7 +29,7 @@ Responses:
             HTTP Status: 500 Internal Server Error
             Description: If any exceptional situation occurs on the server side.
 
-Get Device Details
+#### Get Device Details
 
 Request:
 
