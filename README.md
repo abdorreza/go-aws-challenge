@@ -18,7 +18,7 @@ Request:
         "serial": "A020000102"
     }
 
-    Responses:
+Responses:
 
         Success:
             HTTP Status: 201 Created
