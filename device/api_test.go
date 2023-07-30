@@ -2,147 +2,196 @@ package device
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
+	"errors"
 	"testing"
 
-	"github.com/abdorreza/go-aws-challenge/db"
+	"github.com/abdorreza/go-aws-challenge/model"
 	"github.com/aws/aws-lambda-go/events"
 )
 
+type mockDbClient struct {
+	err    error
+	device model.Device
+	id     string
+	t      *testing.T
+}
+
+func (m mockDbClient) GetDevice(ctx context.Context, deviceID string) (model.Device, error) {
+	if deviceID != m.id {
+		m.t.Errorf("Expected different id, got %v", deviceID)
+	}
+
+	return m.device, m.err
+}
+
+func (m mockDbClient) InsertDevice(ctx context.Context, device model.Device) error {
+	if device != m.device {
+		m.t.Errorf("Expected different device, got %v", device)
+	}
+
+	return m.err
+}
+
 func TestGet(t *testing.T) {
-	// Mocking the context and request for testing
-	ctx := context.Background()
-	request := events.APIGatewayProxyRequest{
-		PathParameters: map[string]string{
-			"id": "some_device_id",
-		},
+	deviceId := "12"
+	device := model.Device{
+		Id:          "12",
+		DeviceModel: "432",
+		Name:        "trx",
+		Note:        "not13",
+		Serial:      "t56",
 	}
-
-	// Test case 1: Device found
-	// Mocking the db.GetDevice function to return a device
-	mockDevice := &Device{Id: "some_device_id", Name: "Test Device"}
-	db.GetDevice = func(ctx context.Context, deviceId string) (*Device, error) {
-		return mockDevice, nil
+	mockDbHanler := mockDbClient{
+		err:    nil,
+		id:     deviceId,
+		device: device,
+		t:      t,
 	}
+	dbHandler = mockDbHanler
 
-	response, err := Get(ctx, request)
+	request := events.APIGatewayProxyRequest{}
+	request.PathParameters = make(map[string]string)
+	request.PathParameters["id"] = deviceId
 
-	// Verify the response and error
+	response, err := Get(context.Background(), request)
 	if err != nil {
-		t.Errorf("Expected no error, but got %v", err)
+		t.Errorf("Expected nil error, got %v", err)
+	}
+
+	var unmarshalledDevice model.Device
+	err = json.Unmarshal([]byte(response.Body), &unmarshalledDevice)
+	if err != nil {
+		t.Errorf("Expected nil error, got %v", err)
+	}
+	if unmarshalledDevice != device {
+		t.Errorf("Expected different device, got %v", unmarshalledDevice)
 	}
 	if response.StatusCode != 200 {
-		t.Errorf("Expected status code 200, but got %d", response.StatusCode)
-	}
-	expectedBody := `{"Id":"some_device_id","Name":"Test Device"}`
-	if response.Body != expectedBody {
-		t.Errorf("Expected body '%s', but got '%s'", expectedBody, response.Body)
-	}
-
-	// Test case 2: Device not found
-	// Mocking the db.GetDevice function to return an error
-	db.GetDevice = func(ctx context.Context, deviceId string) (*Device, error) {
-		return nil, fmt.Errorf("Device not found")
-	}
-
-	response, err = Get(ctx, request)
-
-	// Verify the response and error
-	if err != nil {
-		t.Errorf("Expected no error, but got %v", err)
-	}
-	if response.StatusCode != 404 {
-		t.Errorf("Expected status code 404, but got %d", response.StatusCode)
-	}
-	expectedBody = "Device not found"
-	if response.Body != expectedBody {
-		t.Errorf("Expected body '%s', but got '%s'", expectedBody, response.Body)
-	}
-
-	// Test case 3: Error from db.GetDevice
-	// Mocking the db.GetDevice function to return an error
-	db.GetDevice = func(ctx context.Context, deviceId string) (*Device, error) {
-		return nil, fmt.Errorf("Some error")
-	}
-
-	response, err = Get(ctx, request)
-
-	// Verify the response and error
-	if err != nil {
-		t.Errorf("Expected no error, but got %v", err)
-	}
-	if response.StatusCode != 500 {
-		t.Errorf("Expected status code 500, but got %d", response.StatusCode)
-	}
-	expectedBody = "Some error"
-	if response.Body != expectedBody {
-		t.Errorf("Expected body '%s', but got '%s'", expectedBody, response.Body)
+		t.Errorf("Expected 200 status code, got %v", response.StatusCode)
 	}
 }
 
-
-func TestAdd(t *testing.T) {
-	// Mocking the context and request for testing
-	ctx := context.Background()
-	requestWithValidData := events.APIGatewayProxyRequest{
-		Body: `{"Id":"some_device_id","Name":"Test Device"}`,
+func TestGetDBFailure(t *testing.T) {
+	deviceId := "12"
+	device := model.Device{
+		Id:          "12",
+		DeviceModel: "432",
+		Name:        "trx",
+		Note:        "not13",
+		Serial:      "t56",
 	}
-	requestWithInvalidData := events.APIGatewayProxyRequest{
-		Body: "invalid JSON data",
+	dbErr := errors.New("DB error")
+	mockDbHanler := mockDbClient{
+		err:    dbErr,
+		id:     deviceId,
+		device: device,
+		t:      t,
 	}
+	dbHandler = mockDbHanler
 
-	// Test case 1: Valid data, should return 201 Created
-	// Mocking the db.InsertDevice function to succeed
-	db.InsertDevice = func(ctx context.Context, device model.Device) error {
-		return nil
-	}
+	request := events.APIGatewayProxyRequest{}
+	request.PathParameters = make(map[string]string)
+	request.PathParameters["id"] = deviceId
 
-	response, err := Add(ctx, requestWithValidData)
-
-	// Verify the response and error
+	response, err := Get(context.Background(), request)
 	if err != nil {
-		t.Errorf("Expected no error, but got %v", err)
-	}
-	if response.StatusCode != 201 {
-		t.Errorf("Expected status code 201, but got %d", response.StatusCode)
-	}
-	expectedBody := "HTTP 201 Created"
-	if response.Body != expectedBody {
-		t.Errorf("Expected body '%s', but got '%s'", expectedBody, response.Body)
-	}
-
-	// Test case 2: Invalid JSON data, should return 400 Bad Request
-	response, err = Add(ctx, requestWithInvalidData)
-
-	// Verify the response and error
-	if err != nil {
-		t.Errorf("Expected no error, but got %v", err)
-	}
-	if response.StatusCode != 400 {
-		t.Errorf("Expected status code 400, but got %d", response.StatusCode)
-	}
-	expectedBody = "invalid character 'i' looking for beginning of value"
-	if response.Body != expectedBody {
-		t.Errorf("Expected body '%s', but got '%s'", expectedBody, response.Body)
-	}
-
-	// Test case 3: Error from db.InsertDevice, should return 500 Internal Server Error
-	// Mocking the db.InsertDevice function to return an error
-	db.InsertDevice = func(ctx context.Context, device model.Device) error {
-		return fmt.Errorf("Some error")
-	}
-
-	response, err = Add(ctx, requestWithValidData)
-
-	// Verify the response and error
-	if err != nil {
-		t.Errorf("Expected no error, but got %v", err)
+		t.Errorf("Expected nil error, got %v", err)
 	}
 	if response.StatusCode != 500 {
-		t.Errorf("Expected status code 500, but got %d", response.StatusCode)
+		t.Errorf("Expected 500 status code, got %v", response.StatusCode)
 	}
-	expectedBody = "Some error"
-	if response.Body != expectedBody {
-		t.Errorf("Expected body '%s', but got '%s'", expectedBody, response.Body)
+}
+
+func TestGetDBNotFound(t *testing.T) {
+	deviceId := "12"
+	var device model.Device
+	mockDbHanler := mockDbClient{
+		err:    nil,
+		id:     deviceId,
+		device: device,
+		t:      t,
+	}
+	dbHandler = mockDbHanler
+
+	request := events.APIGatewayProxyRequest{}
+	request.PathParameters = make(map[string]string)
+	request.PathParameters["id"] = deviceId
+
+	response, err := Get(context.Background(), request)
+	if err != nil {
+		t.Errorf("Expected nil error, got %v", err)
+	}
+	if response.StatusCode != 404 {
+		t.Errorf("Expected 404 status code, got %v", response.StatusCode)
+	}
+}
+
+func TestAdd(t *testing.T) {
+	deviceId := "12"
+	device := model.Device{
+		Id:          "12",
+		DeviceModel: "432",
+		Name:        "trx",
+		Note:        "not13",
+		Serial:      "t56",
+	}
+	mockDbHanler := mockDbClient{
+		err:    nil,
+		id:     deviceId,
+		device: device,
+		t:      t,
+	}
+	dbHandler = mockDbHanler
+
+	request := events.APIGatewayProxyRequest{}
+
+	marshalledDevice, err := json.Marshal(device)
+	if err != nil {
+		t.Errorf("Expected nil error, got %v", err)
+	}
+	request.Body = string(marshalledDevice)
+
+	response, err := Add(context.Background(), request)
+	if err != nil {
+		t.Errorf("Expected nil error, got %v", err)
+	}
+	if response.StatusCode != 201 {
+		t.Errorf("Expected 201 status code, got %v", response.StatusCode)
+	}
+}
+
+func TestAddDBFailure(t *testing.T) {
+	deviceId := "12"
+	dbErr := errors.New("DB Error")
+	device := model.Device{
+		Id:          "12",
+		DeviceModel: "432",
+		Name:        "trx",
+		Note:        "not13",
+		Serial:      "t56",
+	}
+	mockDbHanler := mockDbClient{
+		err:    dbErr,
+		id:     deviceId,
+		device: device,
+		t:      t,
+	}
+	dbHandler = mockDbHanler
+
+	request := events.APIGatewayProxyRequest{}
+
+	marshalledDevice, err := json.Marshal(device)
+	if err != nil {
+		t.Errorf("Expected nil error, got %v", err)
+	}
+	request.Body = string(marshalledDevice)
+
+	response, err := Add(context.Background(), request)
+	if err != nil {
+		t.Errorf("Expected nil error, got %v", err)
+	}
+	if response.StatusCode != 500 {
+		t.Errorf("Expected 500 status code, got %v", response.StatusCode)
 	}
 }

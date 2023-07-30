@@ -43,20 +43,6 @@ func (m *mockDynamoDBClient) PutItem(ctx context.Context, params *dynamodb.PutIt
 	return &dynamodb.PutItemOutput{}, m.err
 }
 
-func TestInit(t *testing.T) {
-	once = sync.Once{}
-	dynamodbClient = nil
-
-	// Trigger package initialization indirectly by importing the package
-	importedPackage := struct{}{}
-	_ = importedPackage
-
-	// Verify that the dynamodbClient is set after package initialization
-	if dynamodbClient == nil {
-		t.Errorf("dynamodbClient was not initialized as expected")
-	}
-}
-
 func TestLoadClient(t *testing.T) {
 	once = sync.Once{}
 	dynamodbClient = nil
@@ -86,7 +72,8 @@ func TestGetDevice(t *testing.T) {
 		t:      t,
 	}
 	// Test case 1: Successful retrieval
-	fetchedDevice, err := GetDevice(context.Background(), device.Id)
+	myStruct1 := dynamodbStruct{}
+	fetchedDevice, err := myStruct1.GetDevice(context.Background(), device.Id)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -110,7 +97,8 @@ func TestGetDeviceAWSFailure(t *testing.T) {
 		t:      t,
 	}
 	// Test case 1: Successful retrieval
-	fetchedDevice, err := GetDevice(context.Background(), id)
+	myStruct1 := dynamodbStruct{}
+	fetchedDevice, err := myStruct1.GetDevice(context.Background(), id)
 	if err != awsErr {
 		t.Errorf("Expected different error, got %v", err)
 	}
@@ -136,7 +124,8 @@ func TestInsertDevice(t *testing.T) {
 		t:      t,
 	}
 	// Test case 1: Successful retrieval
-	err := InsertDevice(context.Background(), device)
+	myStruct1 := dynamodbStruct{}
+	err := myStruct1.InsertDevice(context.Background(), device)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -158,7 +147,8 @@ func TestInsertDeviceAWSFailure(t *testing.T) {
 		t:      t,
 	}
 	// Test case 1: Successful retrieval
-	err := InsertDevice(context.Background(), device)
+	myStruct1 := dynamodbStruct{}
+	err := myStruct1.InsertDevice(context.Background(), device)
 	if err != awsErr {
 		t.Errorf("Expected different error, got %v", err)
 	}

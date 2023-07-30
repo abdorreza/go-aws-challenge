@@ -55,26 +55,18 @@ package:
   patterns:
     - ./bin/**
 
-functions:
-  handleRequest:
-    handler: main.HandleRequest
+  createDevice:
+    handler: device/api.Add
     events:
       - httpApi:
           path: /api/devices
           method: post
-
-#   createDevice:
-#     handler: device/api.Add
-#     events:
-#       - httpApi:
-#           path: /api/devices
-#           method: post
-#   getDevice:
-#     handler: device/api.Get
-#     events:
-#       - httpApi:
-#           path: /api/devices/{id}
-#           method: get
+  getDevice:
+    handler: device/api.Get
+    events:
+      - httpApi:
+          path: /api/devices/{id}
+          method: get
 
 resources:
   Resources:

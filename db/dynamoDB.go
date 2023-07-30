@@ -41,37 +41,19 @@ func loadClient(ctx context.Context) error {
 	return nil
 }
 
-// TODO
-// 1) define struct
-
-type myStruct struct {
+type dynamodbStruct struct {
 }
 
-func NewMyStruct() (myStruct, error) {
+func NewDynamodb() (dynamodbStruct, error) {
 	err := loadClient(context.Background())
 	if err != nil {
-		return myStruct{}, err
+		return dynamodbStruct{}, err
 	}
 
-	return myStruct{}, nil
+	return dynamodbStruct{}, nil
 }
 
-type DBHandler interface {
-	GetDevice(ctx context.Context, deviceID string) (model.Device, error)
-	InsertDevice(ctx context.Context, device model.Device) error
-}
-
-func (m myStruct) GetDevice(ctx context.Context, deviceID string) (model.Device, error) {
-	/* hamin implementation*/
-	return model.Device{}, nil
-}
-func (m myStruct) InsertDevice(ctx context.Context, device model.Device) error {
-	/* hamin implementation*/
-	return nil
-}
-
-// Get One Row
-func GetDevice(ctx context.Context, deviceID string) (model.Device, error) {
+func (m dynamodbStruct) GetDevice(ctx context.Context, deviceID string) (model.Device, error) {
 	out, err := dynamodbClient.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(config.DynamodbDeviceDB),
 		Key: map[string]types.AttributeValue{
@@ -91,7 +73,7 @@ func GetDevice(ctx context.Context, deviceID string) (model.Device, error) {
 	return device, nil
 }
 
-func InsertDevice(ctx context.Context, device model.Device) error {
+func (m dynamodbStruct) InsertDevice(ctx context.Context, device model.Device) error {
 	deviceMap, err := attributevalue.MarshalMap(device)
 	if err != nil {
 		return err

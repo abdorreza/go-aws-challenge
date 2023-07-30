@@ -13,7 +13,7 @@ var dbHandler db.DBHandler
 
 func init() {
 	var err error
-	dbHandler, err = db.NewMyStruct()
+	dbHandler, err = db.NewDynamodb()
 	if err != nil {
 		panic(err)
 	}
@@ -35,11 +35,10 @@ func Get(ctx context.Context, request events.APIGatewayProxyRequest) (events.API
 	}
 
 	// Not Found
-	if device.Id != "" {
+	if device.Id == "" {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 404,
-			// Body:       "HTTP 404 Not Found",
-			Body: err.Error(),
+			Body:       "HTTP 404 Not Found",
 		}, nil
 	}
 
@@ -47,8 +46,7 @@ func Get(ctx context.Context, request events.APIGatewayProxyRequest) (events.API
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
-			// Body:       "HTTP 500 Internal Server Error",
-			Body: err.Error(),
+			Body:       "HTTP 500 Internal Server Error",
 		}, nil
 	}
 	return events.APIGatewayProxyResponse{
@@ -64,8 +62,7 @@ func Add(ctx context.Context, request events.APIGatewayProxyRequest) (events.API
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 400,
-			// Body:       "HTTP 400 Bad Request",
-			Body: err.Error(),
+			Body:       "HTTP 400 Bad Request",
 		}, nil
 	}
 
@@ -74,8 +71,7 @@ func Add(ctx context.Context, request events.APIGatewayProxyRequest) (events.API
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
-			// Body:       "HTTP 500 Internal Server Error",
-			Body: err.Error(),
+			Body:       "HTTP 500 Internal Server Error",
 		}, nil
 	}
 
