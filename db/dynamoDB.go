@@ -16,7 +16,6 @@ import (
 var once sync.Once
 var dynamodbClient dynamodbHandler
 
-// Return in Sigleton Manner, Return Dynaodb Client
 func loadClient(ctx context.Context) error {
 	if dynamodbClient != nil {
 		return nil

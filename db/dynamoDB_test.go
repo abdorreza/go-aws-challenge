@@ -71,16 +71,12 @@ func TestGetDevice(t *testing.T) {
 		device: device,
 		t:      t,
 	}
-	// Test case 1: Successful retrieval
+
 	myStruct1 := dynamodbStruct{}
 	fetchedDevice, err := myStruct1.GetDevice(context.Background(), device.Id)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
-
-	// taghiri ke mikone
-	// myStruct1 := myStruct{}
-	// fetchedDevice, err := myStruct1.GetDevice(context.Background(), device.Id)
 
 	if fetchedDevice != device {
 		t.Errorf("Expected different device, got %v", fetchedDevice)
@@ -96,7 +92,7 @@ func TestGetDeviceAWSFailure(t *testing.T) {
 		device: model.Device{},
 		t:      t,
 	}
-	// Test case 1: Successful retrieval
+
 	myStruct1 := dynamodbStruct{}
 	fetchedDevice, err := myStruct1.GetDevice(context.Background(), id)
 	if err != awsErr {
@@ -123,7 +119,7 @@ func TestInsertDevice(t *testing.T) {
 		device: device,
 		t:      t,
 	}
-	// Test case 1: Successful retrieval
+
 	myStruct1 := dynamodbStruct{}
 	err := myStruct1.InsertDevice(context.Background(), device)
 	if err != nil {
@@ -146,7 +142,7 @@ func TestInsertDeviceAWSFailure(t *testing.T) {
 		device: device,
 		t:      t,
 	}
-	// Test case 1: Successful retrieval
+
 	myStruct1 := dynamodbStruct{}
 	err := myStruct1.InsertDevice(context.Background(), device)
 	if err != awsErr {

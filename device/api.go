@@ -20,21 +20,17 @@ func init() {
 }
 
 func Get(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	// Retrieve the "deviceId" path parameter from the request
 	deviceId := request.PathParameters["id"]
 
 	device, err := dbHandler.GetDevice(ctx, deviceId)
 
-	// Any Problem
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
-			//Body:       "HTTP 500 Internal Server Error",
-			Body: err.Error(),
+			Body:       "HTTP 500 Internal Server Error",
 		}, nil
 	}
 
-	// Not Found
 	if device.Id == "" {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 404,
@@ -58,7 +54,6 @@ func Get(ctx context.Context, request events.APIGatewayProxyRequest) (events.API
 func Add(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var device model.Device
 	err := json.Unmarshal([]byte(request.Body), &device)
-	// Bad request
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 400,
@@ -67,7 +62,6 @@ func Add(ctx context.Context, request events.APIGatewayProxyRequest) (events.API
 	}
 
 	err = dbHandler.InsertDevice(ctx, device)
-	// Server side error
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
@@ -75,7 +69,6 @@ func Add(ctx context.Context, request events.APIGatewayProxyRequest) (events.API
 		}, nil
 	}
 
-	// Success
 	return events.APIGatewayProxyResponse{
 		StatusCode: 201,
 		Body:       "HTTP 201 Created",
