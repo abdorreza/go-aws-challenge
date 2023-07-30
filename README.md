@@ -67,18 +67,9 @@ Feel free to use this API to interact with devices and retrieve their details. I
     * Installing [Postman](https://www.postman.com/) for testing POST and GET requests.
 
 ## Tests
-    In testing, we used mocking the process of simulating the behavior of external
-    dependencies or collaborating components during tests. Instead of relying on real
-    implementations, we create "mocks" that mimic the expected behavior of these
-    dependencies. This allows us to isolate the code under test and focus on specific
-    scenarios without the complexities of real-world interactions.
+    In testing, we used mocking the process of simulating the behavior of external dependencies or collaborating components during tests. Instead of          relying on real implementations, we create "mocks" that mimic the expected behavior of these dependencies. This allows us to isolate the code under       test and focus on specific scenarios without the complexities of real-world interactions.
 
-    Testing is a crucial part of building reliable and bug-free software, and Golang
-    provides a powerful testing framework to ensure the quality of our code. The command
-    'go test ./...' is a convenient and efficient way to run all the tests in your
-    project, including sub-packages. By executing this simple command from the root of
-    your project, Go will automatically traverse all directories and execute tests in
-    each package it discovers.
+    Testing is a crucial part of building reliable and bug-free software, and Golang provides a powerful testing framework to ensure the quality of our       code. The command 'go test ./...' is a convenient and efficient way to run all the tests in your project, including sub-packages. By executing this       simple command from the root of your project, Go will automatically traverse all directories and execute tests in each package it discovers.
 
 ## TODO
     - Writing more test cases
