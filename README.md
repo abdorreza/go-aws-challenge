@@ -24,8 +24,8 @@ Responses:
             HTTP Status: 201 Created
         Failure 1:
             HTTP Status: 400 Bad Request
-            Description: If any of the payload fields are missing. The response body will contain a descriptive error message for
-            the client to identify the problem.
+            Description: If any of the payload fields are missing. The response body will contain a descriptive
+            error message for the client to identify the problem.
         Failure 2:
             HTTP Status: 500 Internal Server Error
             Description: If any exceptional situation occurs on the server side.
