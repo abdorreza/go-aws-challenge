@@ -31,7 +31,7 @@ provider:
 
 # you can add statements to the Lambda function's IAM Role here
 #  iam:
-#    role:
+#      role:
 #      statements:
 #        - Effect: "Allow"
 #          Action:
@@ -47,6 +47,30 @@ provider:
 #                - "Ref" : "ServerlessDeploymentBucket"
 #                - "/*"
 
+# Added
+
+# plugins:
+#   - serverless-iam-roles-per-function
+
+
+# functions:
+#   func1:
+#     handler: device/api.Get
+#     iamRoleStatementsName: serverless-iam-roles-per-function #optional custom role name setting instead of the default generated one
+#     iamRoleStatements:
+#       - Effect: "Allow"        
+#         Action:
+#           - dynamodb:GetItem        
+#         Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/devices"
+    
+#   func2:
+#     handler: device/api.Add
+#     iamRoleStatements:
+#       - Effect: "Allow"        
+#         Action:
+#           - dynamodb:PutItem        
+#         Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/devices"  
+
 # you can define service wide environment variables here
 #  environment:
 #    variable1: value1
@@ -55,6 +79,7 @@ package:
   patterns:
     - ./bin/**
 
+functions:
   createDevice:
     handler: device/api.Add
     events:
